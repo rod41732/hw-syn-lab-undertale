@@ -71,7 +71,7 @@ module road_uart_echo(
     );
 
     // transmit Z instead of space
-    wire [7:0] tx_actual = tx_upper == 8'h20 ? 8'h5a : tx_upper;
+    wire [7:0] tx_actual = tx_upper == 8'h20 ? 8'h20 : tx_upper;
     
     road_uart_tx transmitter(
         .CLK(CLK),

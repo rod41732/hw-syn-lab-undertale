@@ -123,7 +123,7 @@ module top(
     );
    
 
-	always @(thirty) begin
+	always @(posedge thirty) begin
 		display <= debugOutput;
 	end
 
