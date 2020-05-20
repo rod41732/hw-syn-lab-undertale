@@ -48,9 +48,9 @@ module RAM(
   input wire writeClk;                          // Write clock
   input wire readClk;                          // Read clock
   input wire  we;                           // Write enable
-  input wire  en;                           // Read Enable, for additional power savings, disable when not in use
-  input wire  rstb;                          // Output reset (does not affect memory contents)
-  input wire  outEnb;                        // Output register enable
+  wire  en;                           // Read Enable, for additional power savings, disable when not in use
+  wire  rstb;                          // Output reset (does not affect memory contents)
+  wire  outEnb;                        // Output register enable
   output wire [RAM_WIDTH-1:0] dout;                 // RAM output data
 
   reg [RAM_WIDTH-1:0] RAM_BLOCK [RAM_DEPTH-1:0];

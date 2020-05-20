@@ -148,24 +148,24 @@ module vga_controller(
     end
 
     // // TODO: control gameState and tickcount
-    // always @(gameClk) begin
-    //     if (gameState == 0) begin
-    //         if (tickCount == 300) begin
-    //             gameState = 1;
-    //             tickCount = 0;
-    //         end
-    //         else 
-    //             tickCount = tickCount + 1;
-    //     end 
-    //     else if (gameState == 1) begin
-    //         if (tickCount == 40) begin
-    //             gameState = 0;
-    //             tickCount = 0;
-    //         end
-    //         else 
-    //             tickCount = tickCount + 1;
-    //     end
-    // end
+    always @(posedge gameClk) begin
+        if (gameState == 0) begin
+            if (tickCount == 300) begin
+                gameState = 1;
+                tickCount = 0;
+            end
+            else 
+                tickCount = tickCount + 1;
+        end 
+        else if (gameState == 1) begin
+            if (tickCount == 40) begin
+                gameState = 0; 
+                tickCount = 0;
+            end
+            else 
+                tickCount = tickCount + 1;
+        end
+    end
 
     // keyboard logic stuff
 	always @(negedge transmit) begin
