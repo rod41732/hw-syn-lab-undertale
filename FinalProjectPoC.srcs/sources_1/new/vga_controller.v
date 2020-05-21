@@ -78,7 +78,7 @@ module vga_controller(
     reg [7:0] hp = 100, maxHp = 100, enemyHp = 100, maxEnemyHp = 100; // HPs
     wire [7:0] attackDamage; 
 
-    reg [3:0] gameState = 0, nextGameState = 0; //
+    reg [3:0] gameState = 7, nextGameState = 0; //
     reg [15:0] tickCount = 0, nextTickCount = 0; // for countdown purpose or something
 
     // ========= wirings
@@ -89,8 +89,12 @@ module vga_controller(
     reg [BUS_WIDTH-1:0] dataInReg;
     
     always @(posedge clk)
-        debugOutput = tickCount;
-
+        if (gameState == 0)
+            debugOutput = tickCount;
+        else if (gameState == 1)
+            debugOutput = attackDamage;
+        else 
+            debugOutput = 16'hffff;
 
     // next states (state, i, j) calculation
     always @(*) begin
@@ -212,10 +216,15 @@ module vga_controller(
             // end
         end
         // attack logic
-        if (!pTransmit && transmit && tx_buf == 8'h20 && gameState == 1)  begin
-            enemyHp <= enemyHp - attackDamage;
-            gameState <= 0;
-            tickCount <= 0;
+        if (!pTransmit && transmit && tx_buf == 8'h20) begin
+            if (gameState == 1) begin
+                enemyHp <= enemyHp - attackDamage;
+                gameState <= 0;
+                tickCount <= 0;
+            end
+            else if (gameState == 7) begin
+                gameState = 0;
+            end
         end
 
         pGameClk <= gameClk;
