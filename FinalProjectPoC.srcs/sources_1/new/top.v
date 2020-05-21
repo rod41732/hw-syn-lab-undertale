@@ -61,7 +61,7 @@ module top(
 
 	// display stuff
 	assign readAddr = 10'd640*{10'b0, pixelY} + pixelX;
-	colorLUT colorMap(dataOut, rgb); 
+	colorLUT colorMap(video_on ? dataOut : 5'b0, rgb); 
 
 	// it's now game controller
 	vga_controller #(.BUS_WIDTH(BUS_WIDTH)) vga_ctrl(
@@ -103,6 +103,7 @@ module top(
 	vga_timer vga_timer_module(
 		.clk(clk),
 		.reset(reset),
+		.video_on(video_on),
 		.hsync(hsync),
 		.vsync(vsync),
 		.x(pixelX),

@@ -26,6 +26,7 @@ module vga_timer
         input reset,
 		output hsync,
         output vsync,
+        output video_on,
         // wire used to control RAM read of TOP
         output x,
         output y
@@ -35,6 +36,7 @@ module vga_timer
     wire reset;
     wire hsync;
     wire vsync;
+    wire video_on;
     wire [9:0] x;
     wire [9:0] y;
 

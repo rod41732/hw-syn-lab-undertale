@@ -106,7 +106,7 @@ module vga_controller(
             nextState = onGameClk ? 0 : 2;
 
         nextWriteAddr = (state == 2'b00 || state == 2'b01) ? 11'd640*{9'b0, i} + j : 0;
-        nextWe = state == 2'b00 || state == 2'b01;
+        nextWe = gameState != 7 && (state == 2'b00 || state == 2'b01);
 
         // render scan state
         if (state == 1) // advance when idle only

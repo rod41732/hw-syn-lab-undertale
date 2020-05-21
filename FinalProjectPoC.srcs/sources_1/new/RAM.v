@@ -39,7 +39,7 @@ module RAM(
   parameter RAM_WIDTH = 8;                  // Specify RAM data width
   parameter RAM_DEPTH = 307200;                  // Specify RAM depth (number of entries)
   parameter RAM_PERFORMANCE = "LOW_LATENCY"; // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
-  parameter INIT_FILE = "";                       // Specify name/location of RAM initialization file if using one (leave blank if not)
+  parameter INIT_FILE = "title.mem";                       // Specify name/location of RAM initialization file if using one (leave blank if not)
     
   // dont know why it error and i need to HARD CODE ram width
   input wire [18:0] writeAddr; // Write address bus, width determined from RAM_DEPTH
