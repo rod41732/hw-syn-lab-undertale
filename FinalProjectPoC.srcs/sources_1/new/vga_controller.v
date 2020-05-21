@@ -62,11 +62,10 @@ module vga_controller(
     reg [18:0] nextWriteAddr;
 
     // polling
-    reg pGameClk = 0, pTransmit = 0;
+    reg pGameClk = 0, pTransmit = 0, pEncounter = 0;
     // --> Interrupt-ish ?
     wire onGameClk = !pGameClk && gameClk;
     wire onTransmit = !pTransmit && transmit;
-
 
     // scan position
     reg [9:0] i = 0, j = 0, ni, nj; // row, col
@@ -75,7 +74,7 @@ module vga_controller(
     reg [9:0] cx = 10'd320, cy = 10'd240;
     reg isHit = 0;
     reg [5:0] hitCD = 0;
-    reg [7:0] hp = 100, maxHp = 100, enemyHp = 100, maxEnemyHp = 100; // HPs
+    reg [7:0] hp = 100, maxHp = 100, enemyHp = 1, maxEnemyHp = 100; // HPs
     wire [7:0] attackDamage; 
 
     reg [3:0] gameState = 7, nextGameState = 0; //
@@ -83,13 +82,13 @@ module vga_controller(
 
     // ========= wirings
     // RGB data from module
-    wire [BUS_WIDTH-1:0] playerRGB, enemy1RGB, enemy2RGB, borderRGB, hpbarRGB, attackIndRGB;
+    wire [BUS_WIDTH-1:0] playerRGB, enemy1RGB, enemy2RGB, borderRGB, hpbarRGB, attackIndRGB, mapRGB;
     
     // buffer    
     reg [BUS_WIDTH-1:0] dataInReg;
     
     always @(posedge clk)
-        if (gameState == 0)
+        if (gameState == 0 || gameState == 2)
             debugOutput = tickCount;
         else if (gameState == 1)
             debugOutput = attackDamage;
@@ -160,7 +159,7 @@ module vga_controller(
         end
         else if (state == 1) begin
 
-            if (gameState == 0) begin // VS monster
+            if (gameState == 0) begin // dodge
 
 
                 if (|playerRGB) dataInReg <= playerRGB;
@@ -179,7 +178,7 @@ module vga_controller(
 
 
             end
-            else if(gameState == 1) begin
+            else if(gameState == 1) begin // attack
 
                 if (|playerRGB) dataInReg <= playerRGB;
                 // else if (|enemy1RGB) dataInReg <= enemy1RGB;
@@ -192,41 +191,69 @@ module vga_controller(
                 
                 // else 
             end
-            else if (gameState == 7) begin
+            else if (gameState == 7) begin // menu
                 dataInReg <= (i/4+j/4)%2 == 0 ? 5'd1 : 5'd2;
+            end
+            else if (gameState == 2) begin // map
+                if (|mapRGB) dataInReg <= mapRGB;
+                else dataInReg <= 0;
             end
         end
 
+        // game state
         if (gameClk && !pGameClk) begin
-            if (gameState == 0) begin
+            if (enemyHp == 0 ) begin // enemy dead --> go to map
+                // reset game and go to map
+                enemyHp <= 100;
+                gameState <= 2;
+            end
+            else if (hp == 0) begin // dead --> go to main
+                hp <= 100;
+                enemyHp <= 100;
+                gameState <= 7;
+            end
+            else if (gameState == 0) begin
                 if (tickCount == 300) begin
-                    gameState <= 1;
+                    gameState <= 1; // attack phase
                     tickCount <= 0;
                 end
                 else 
                     tickCount <= tickCount + 1;
-            end 
-            // else if (gameState == 1) begin
-            //     if (tickCount == 100) begin
-            //         gameState <= 0;
+            end
+            // else if (gameState == 2) begin 
+            //     if (tickCount == 400) begin
+            //         gameState <= 0; // dodge phase
             //         tickCount <= 0;
             //     end
             //     else 
             //         tickCount <= tickCount + 1;
             // end
         end
+        // cheat logic
+
+
+
+
         // attack logic
-        if (!pTransmit && transmit && tx_buf == 8'h20) begin
-            if (gameState == 1) begin
-                enemyHp <= enemyHp - attackDamage;
-                gameState <= 0;
-                tickCount <= 0;
-            end
-            else if (gameState == 7) begin
-                gameState = 0;
-            end
+        if (!pTransmit && transmit) begin
+            if (tx_buf == 8'h20)
+                if (gameState == 1) begin
+                    enemyHp <= enemyHp <= attackDamage ? 0 : enemyHp - attackDamage;
+                    gameState <= 0;
+                    tickCount <= 0;
+                end
+                else if (gameState == 7) begin
+                    gameState <= 0;
+                end
+            else if (tx_buf == 8'h58) // X
+                enemyHp <= 0; 
+        end
+        // encounter enemy
+        if (!pEncounter && encounter) begin
+            gameState <= 0;
         end
 
+        pEncounter <= encounter;
         pGameClk <= gameClk;
         pTransmit <= transmit;
     end
@@ -279,6 +306,18 @@ module vga_controller(
         i,
         attackIndRGB,
         attackDamage
+    );
+
+    // only trigger when gameState = 2
+    wire transmitMap = transmit && gameState == 2;
+    map #(.BUS_WIDTH(BUS_WIDTH)) mapModule(
+        clk,
+        transmitMap,
+        tx_buf,
+        j,
+        i,
+        mapRGB,
+        encounter
     );
 
 

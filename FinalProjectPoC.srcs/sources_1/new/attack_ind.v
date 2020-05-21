@@ -78,12 +78,13 @@ module attack_ind(
             else
                 rgb_reg <= 5'd0;
                 
-        if ((middle > markerPos ? middle - markerPos : markerPos - middle) <= 30)
+        if ((middle > markerPos ? middle - markerPos : markerPos - middle) <= 10)
             damage_reg <= 8'd40;
-        else if ((middle > markerPos ? middle - markerPos : markerPos - middle) <= 45)
+        else if ((middle > markerPos ? middle - markerPos : markerPos - middle) <= 30)
             damage_reg <= 8'd30;
         else if ((middle > markerPos ? middle - markerPos : markerPos - middle) <= 65)
             damage_reg <= 8'd15;
+        else damage_reg <= 0;
     end
     assign damage = damage_reg;
     assign rgb = rgb_reg;
