@@ -119,20 +119,20 @@ module vga_controller(
                 ni = i;
                 nj = j + 1;
             end
-        
-        if (!pGameClk && gameClk) begin
-            if (gameState == 0) begin
-                if (tickCount == 300) begin
-                    nextGameState = 1;
-                    nextTickCount = 0;
-                end
-                else 
-                    nextTickCount = tickCount + 1;
-            end 
-        end
-        if (!pTransmit && transmit) begin
-            nextGameState = 0;
-        end
+        // -- use in clk instead
+        // if (!pGameClk && gameClk) begin
+            // if (gameState == 0) begin
+            //     if (tickCount == 300) begin
+            //         nextGameState = 1;
+            //         nextTickCount = 0;
+            //     end
+            //     else 
+            //         nextTickCount = tickCount + 1;
+            // end 
+        // end
+        // if (!pTransmit && transmit) begin
+        //     nextGameState = 0;
+        // end
     end
 
     // state assignment
@@ -142,8 +142,9 @@ module vga_controller(
         j <= nj;
         we <= nextWe;
         writeAddr <= nextWriteAddr;
-        tickCount <= nextTickCount;
-        gameState <= nextGameState;
+
+        // tickCount <= nextTickCount;
+        // gameState <= nextGameState;
 
         if (state == 0) begin
             dataInReg <= 0;
@@ -153,7 +154,7 @@ module vga_controller(
         end
         else if (state == 1) begin
 
-            // if (gameState == 0) begin // VS monster
+            if (gameState == 0) begin // VS monster
 
 
                 if (|playerRGB) dataInReg <= playerRGB;
@@ -171,22 +172,47 @@ module vga_controller(
 
 
 
-            // end
-            // else begin
-            //     // if (|playerRGB) dataInReg <= playerRGB;
-            //     // else if (|enemy1RGB) dataInReg <= enemy1RGB;
-            //     // else if (|enemy2RGB) dataInReg <= enemy2RGB;
-            //     if (|borderRGB) dataInReg <= borderRGB;
-            //     else if (|hpbarRGB) dataInReg <= hpbarRGB;
-            //     else if (|attackIndRGB) dataInReg <= attackIndRGB;
-            //     else dataInReg <= 0;
+            end
+            else begin
+
+                if ((i/4+j/4)%2 == 0) dataInReg <= 5'd4;
+                else dataInReg <= 5'd1;
+
+                // if (|playerRGB) dataInReg <= playerRGB;
+                // else if (|enemy1RGB) dataInReg <= enemy1RGB;
+                // else if (|enemy2RGB) dataInReg <= enemy2RGB;
+                // if (|borderRGB) dataInReg <= borderRGB;
+                // else if (|hpbarRGB) dataInReg <= hpbarRGB;
+                // else if (|attackIndRGB) dataInReg <= attackIndRGB;
+                // else dataInReg <= 0;
                 
-            //     // if (|playerRGB && (|enemy1RGB || |enemy2RGB) && ~isHit && ~|hitCD) begin
-            //     //     isHit <= 1;
-            //     //     hitCD <= 6'd60;
-            //     // end
-            // end
+                // if (|playerRGB && (|enemy1RGB || |enemy2RGB) && ~isHit && ~|hitCD) begin
+                //     isHit <= 1;
+                //     hitCD <= 6'd60;
+                // end
+            end
         end
+
+        if (gameClk && !pGameClk) begin
+            if (gameState == 0) begin
+                if (tickCount == 300) begin
+                    gameState <= 1;
+                    tickCount <= 0;
+                end
+                else 
+                    tickCount <= tickCount + 1;
+            end 
+            else if (gameState == 1) begin
+                if (tickCount == 100) begin
+                    gameState <= 0;
+                    tickCount <= 0;
+                end
+                else 
+                    tickCount <= tickCount + 1;
+            end
+        end
+
+
         pGameClk <= gameClk;
         pTransmit <= transmit;
     end
