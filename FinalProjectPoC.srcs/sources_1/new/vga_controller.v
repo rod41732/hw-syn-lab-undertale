@@ -115,10 +115,10 @@ module vga_controller(
                 else
                     ni = i + 1;
             end // normally
-            else begin
-                ni = i;
-                nj = j + 1;
-            end
+        else begin
+            ni = i;
+            nj = j + 1;
+        end
         // -- use in clk instead
         // if (!pGameClk && gameClk) begin
             // if (gameState == 0) begin
@@ -149,6 +149,8 @@ module vga_controller(
         if (state == 0) begin
             dataInReg <= 0;
             isHit <= 0;
+            i <= 0;
+            j <= 0;
             hp <= isHit ? (hp <= 3 ? 0 : hp - 3) : hp;
             hitCD = hitCD == 0 ? 0 : hitCD - 1;
         end
@@ -173,23 +175,21 @@ module vga_controller(
 
 
             end
-            else begin
+            else if(gameState == 1) begin
 
-                if ((i/4+j/4)%2 == 0) dataInReg <= 5'd4;
-                else dataInReg <= 5'd1;
-
-                // if (|playerRGB) dataInReg <= playerRGB;
+                if (|playerRGB) dataInReg <= playerRGB;
                 // else if (|enemy1RGB) dataInReg <= enemy1RGB;
                 // else if (|enemy2RGB) dataInReg <= enemy2RGB;
-                // if (|borderRGB) dataInReg <= borderRGB;
-                // else if (|hpbarRGB) dataInReg <= hpbarRGB;
-                // else if (|attackIndRGB) dataInReg <= attackIndRGB;
+                else if (|borderRGB) dataInReg <= borderRGB;
+                else if (|hpbarRGB) dataInReg <= hpbarRGB;
+                else if (|attackIndRGB) dataInReg <= attackIndRGB;
+                else dataInReg <= 0; // some how ?
                 // else dataInReg <= 0;
                 
-                // if (|playerRGB && (|enemy1RGB || |enemy2RGB) && ~isHit && ~|hitCD) begin
-                //     isHit <= 1;
-                //     hitCD <= 6'd60;
-                // end
+                // else 
+            end
+            else if (gameState == 7) begin
+                dataInReg <= (i/4+j/4)%2 == 0 ? 5'd1 : 5'd2;
             end
         end
 
@@ -202,16 +202,21 @@ module vga_controller(
                 else 
                     tickCount <= tickCount + 1;
             end 
-            else if (gameState == 1) begin
-                if (tickCount == 100) begin
-                    gameState <= 0;
-                    tickCount <= 0;
-                end
-                else 
-                    tickCount <= tickCount + 1;
-            end
+            // else if (gameState == 1) begin
+            //     if (tickCount == 100) begin
+            //         gameState <= 0;
+            //         tickCount <= 0;
+            //     end
+            //     else 
+            //         tickCount <= tickCount + 1;
+            // end
         end
-
+        // attack logic
+        if (!pTransmit && transmit && tx_buf == 8'h20 && gameState == 1)  begin
+            enemyHp <= enemyHp - attackDamage;
+            gameState <= 0;
+            tickCount <= 0;
+        end
 
         pGameClk <= gameClk;
         pTransmit <= transmit;
@@ -223,8 +228,6 @@ module vga_controller(
 		else if (tx_buf == 8'h53) cy = cy + 10; // s
 		else if (tx_buf ==  8'h41) cx = cx - 10; // a
 		else if (tx_buf ==  8'h44) cx = cx + 10; // d
-        else if (tx_buf == 8'h20) 
-            enemyHp = enemyHp - attackDamage;
 	end
 
 
@@ -261,6 +264,7 @@ module vga_controller(
     );
 
     attack_ind #(.BUS_WIDTH(BUS_WIDTH)) attackInd1(
+        clk,
         gameClk,
         j,
         i,

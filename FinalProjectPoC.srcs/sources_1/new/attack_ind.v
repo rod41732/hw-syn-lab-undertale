@@ -21,6 +21,7 @@
 
 
 module attack_ind(
+    clk,
     gameClk, // auto driven by gameclk
     x,
     y,
@@ -34,11 +35,17 @@ module attack_ind(
     parameter THICCNESS = 3;
     parameter HEIGHT = 30;
 
+    input wire clk;
     input wire gameClk; // auto driven by gameclk
     input wire [9:0] x;
     input wire [9:0] y;
-    output reg [BUS_WIDTH-1:0] rgb;
-    output reg [7:0] damage;
+    output wire [BUS_WIDTH-1:0] rgb;
+    output wire [7:0] damage;
+
+
+    reg [BUS_WIDTH-1:0] rgb_reg;
+    reg [7:0] damage_reg;
+
 
 
     wire [9:0] middle = (LEFT+RIGHT)/2; // to lzay to declare param
@@ -54,26 +61,31 @@ module attack_ind(
     end
 
 
-    always @(*) begin
+    always @(posedge clk) begin
         if (markerPos-THICCNESS <= x && x <= markerPos+THICCNESS &&
             TOP-HEIGHT <= y && y <= TOP+HEIGHT
-        ) rgb = 5'd3;
+        ) rgb_reg <= 5'd3;
         else 
             if (TOP-THICCNESS <= y && y <= TOP+THICCNESS)
                 if ((middle > x ? middle - x : x - middle) <= 30)
-                    rgb = 5'd4;
+                    rgb_reg <= 5'd4;
                 else if ((middle > x ? middle - x : x - middle) <= 45)
-                    rgb = 5'd1;
+                    rgb_reg <= 5'd1;
                 else if ((middle > x ? middle - x : x - middle) <= 65)
-                    rgb = 5'd6;
+                    rgb_reg <= 5'd6;
                 else 
-                    rgb = 5'd0;
+                    rgb_reg <= 5'd0;
+            else
+                rgb_reg <= 5'd0;
+                
         if ((middle > x ? middle - x : x - middle) <= 30)
-            damage = 8'd40;
+            damage_reg <= 8'd40;
         else if ((middle > x ? middle - x : x - middle) <= 45)
-            damage = 8'd30;
+            damage_reg <= 8'd30;
         else if ((middle > x ? middle - x : x - middle) <= 65)
-            damage = 8'd15;
+            damage_reg <= 8'd15;
     end
+    assign damage = damage_reg;
+    assign rgb = rgb_reg;
 
 endmodule
