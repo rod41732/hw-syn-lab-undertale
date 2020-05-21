@@ -75,7 +75,7 @@ module road_uart_echo(
     
     road_uart_tx transmitter(
         .CLK(CLK),
-        .TRANSMIT(shouldTransmit),
+        .TRANSMIT(out),
         .RX_BYTE(tx_actual),
         .TX(TX)
     );
