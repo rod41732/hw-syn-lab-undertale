@@ -53,8 +53,8 @@ module map(
     reg pTransmit;
     reg [7:0] offsetX, offsetY;
     reg [7:0] posiX = 10, posiY = 10; // position on map
+    reg [7:0] oldPosX, oldPosY; // old position for rollback
     
-    reg oldPosX, oldPosY;
     reg [BUS_WIDTH-1:0] rgb_reg; 
 
     // trigger enemy
