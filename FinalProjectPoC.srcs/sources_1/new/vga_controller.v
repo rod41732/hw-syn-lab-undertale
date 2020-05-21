@@ -259,11 +259,17 @@ module vga_controller(
     end
 
     // keyboard logic stuff
-	always @(negedge transmit) begin
+    wire gameTransmit = (transmit && gameState == 0);
+	always @(negedge gameTransmit) begin
 		if (tx_buf == 8'h57) cy = cy - 10; // w 
 		else if (tx_buf == 8'h53) cy = cy + 10; // s
 		else if (tx_buf ==  8'h41) cx = cx - 10; // a
 		else if (tx_buf ==  8'h44) cx = cx + 10; // d
+
+        if (cx <= 240) cx = 240;
+        if (cx >= 400) cx = 400;
+        if (cy <= 240) cx = 240;
+        if (cy >= 420) cx = 420;
 	end
 
 

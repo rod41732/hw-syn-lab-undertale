@@ -49,9 +49,12 @@ module map(
 
     reg [7:0] posX = 10, posY = 10;
 
-    reg [4:0] fakeCounter;
+    reg [7:0] fakeCounter;
     reg pTransmit;
     reg [7:0] offsetX, offsetY;
+    reg [7:0] posiX = 10, posiY = 10; // position on map
+    
+    reg oldPosX, oldPosY;
 
     // trigger enemy
     always @(posedge clk) begin
@@ -60,36 +63,71 @@ module map(
             else if (tx_buf == 8'h53) posY = posY + 1; // s
             else if (tx_buf ==  8'h41) posX = posX - 1; // a
             else if (tx_buf ==  8'h44) posX = posX + 1; // d
-            if (fakeCounter == 15) begin
-                fakeCounter = 0;
-                encounter = 1;
-            end
-            else
-                fakeCounter = fakeCounter + 1;
         end
-        else 
-            encounter = 0;
         
         // render
-        offsetX = posX/80*80;
-        offsetY = posY/60*60;
+        offsetX = posX/40*40;
+        offsetY = posY/30*30;
+        posiX = offsetX + x/8;
+        posiY = offsetY + y/8; 
 
-        if (offsetX + x/8 == posX && offsetY + y/8 == posY) begin
+
+        // render just map
+        if (posiX == posX && posiY == posY) begin
+            rgb = 1;
+        end
+        else if ((posiX == 0 || posiX == 160) && (0 <= posiY && posiY <= 120) ||
+                 (posiY == 0 || posiY == 120) && (0 <= posiX && posiX <= 160)) begin
             rgb = 5'd1;
         end
-        else if (offsetX+x/8 == 0 || offsetX+x/8 == 160 || offsetY+y/8 == 0 || offsetY+y/8 == 120) begin
-            rgb = 5'd3;
+        // fake circles
+        else if ({10'd0, posiX > 30 ? posiX-30: 30-posiX}**2 + {10'd0, posiY > 10 ? posiY-10: 10-posiY}**2 <= 66) begin
+            rgb = 5;
         end
-        else if (((offsetX+x/8) * 27 + 12)*(offsetY+y/8) % 29 == 13) begin
-            rgb = 5'd4;
+        else if ({10'd0, posiX > 10 ? posiX-10: 10-posiX}**2 + {10'd0, posiY > 30 ? posiY-30: 30-posiY}**2 <= 49) begin
+            rgb = 2;
         end
-        else rgb = 0;
+        else if ({10'd0, posiX > 30 ? posiX-30: 30-posiX}**2 + {10'd0, posiY > 50 ? posiY-50: 50-posiY}**2 <= 30) begin
+            rgb = 2;
+        end
+        else if ({10'd0, posiX > 70 ? posiX-70: 70-posiX}**2 + {10'd0, posiY > 35 ? posiY-35: 35-posiY}**2 <= 100) begin
+            rgb = 3;
+        end
+        else if ({10'd0, posiX > 100 ? posiX-100: 100-posiX}**2 + {10'd0, posiY > 35 ? posiY-35: 35-posiY}**2 <= 26) begin
+            rgb = 3;
+        end
+        else if ({10'd0, posiX > 100 ? posiX-100: 100-posiX}**2 + {10'd0, posiY > 55 ? posiY-55: 55-posiY}**2 <= 43) begin
+            rgb = 4;
+        end
+        // hardcode enemy
+        // else if (posiX == 15 && posiY == 10 || posiX == 12 && posiY == 54 || posiX == 27 && posiY == 33 ||
+        //     posiX == 70 && posiY == 20 || posiX == 57 && posiY == 57) begin
+        //     rgb = 6;
+        //     // also trigger encounter 
+        //     // if (posX == posiX && posY == posiY)
+        //     //    encounter = 1;
+        //     // disable encounter hopefully in few tick
+        // end
+        else begin
+            rgb = 0;
+            // encounter = 0;
+        end
         
-
-
-
+        // render player and check collision
+        // if (posiX == posX && posiY == posY) begin
+        //     if (rgb != 0)
+        //         posX = oldPosX;
+        //         posY = oldPosY;
+        //     end
+        //     else begin
+        //         rgb = 1;
+        //         oldPosX = posX;
+        //         oldPosY = posY;
+        //     end
         pTransmit = transmit;
     end
+
+    
 
     
 
