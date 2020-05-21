@@ -55,6 +55,7 @@ module map(
     reg [7:0] posiX = 10, posiY = 10; // position on map
     
     reg oldPosX, oldPosY;
+    reg [BUS_WIDTH-1:0] rgb_reg; 
 
     // trigger enemy
     always @(posedge clk) begin
@@ -71,59 +72,64 @@ module map(
         posiX = offsetX + x/8;
         posiY = offsetY + y/8; 
 
-
         // render just map
-        if (posiX == posX && posiY == posY) begin
-            rgb = 1;
-        end
-        else if ((posiX == 0 || posiX == 160) && (0 <= posiY && posiY <= 120) ||
+        if ((posiX == 0 || posiX == 160) && (0 <= posiY && posiY <= 120) ||
                  (posiY == 0 || posiY == 120) && (0 <= posiX && posiX <= 160)) begin
-            rgb = 5'd1;
+            rgb_reg = 3;
         end
         // fake circles
         else if ({10'd0, posiX > 30 ? posiX-30: 30-posiX}**2 + {10'd0, posiY > 10 ? posiY-10: 10-posiY}**2 <= 66) begin
-            rgb = 5;
+            rgb_reg = 5;
         end
         else if ({10'd0, posiX > 10 ? posiX-10: 10-posiX}**2 + {10'd0, posiY > 30 ? posiY-30: 30-posiY}**2 <= 49) begin
-            rgb = 2;
+            rgb_reg = 2;
         end
         else if ({10'd0, posiX > 30 ? posiX-30: 30-posiX}**2 + {10'd0, posiY > 50 ? posiY-50: 50-posiY}**2 <= 30) begin
-            rgb = 2;
+            rgb_reg = 2;
         end
         else if ({10'd0, posiX > 70 ? posiX-70: 70-posiX}**2 + {10'd0, posiY > 35 ? posiY-35: 35-posiY}**2 <= 100) begin
-            rgb = 3;
+            rgb_reg = 3;
         end
         else if ({10'd0, posiX > 100 ? posiX-100: 100-posiX}**2 + {10'd0, posiY > 35 ? posiY-35: 35-posiY}**2 <= 26) begin
-            rgb = 3;
+            rgb_reg = 3;
         end
         else if ({10'd0, posiX > 100 ? posiX-100: 100-posiX}**2 + {10'd0, posiY > 55 ? posiY-55: 55-posiY}**2 <= 43) begin
-            rgb = 4;
+            rgb_reg = 4;
         end
         // hardcode enemy
-        // else if (posiX == 15 && posiY == 10 || posiX == 12 && posiY == 54 || posiX == 27 && posiY == 33 ||
-        //     posiX == 70 && posiY == 20 || posiX == 57 && posiY == 57) begin
-        //     rgb = 6;
-        //     // also trigger encounter 
-        //     // if (posX == posiX && posY == posiY)
-        //     //    encounter = 1;
-        //     // disable encounter hopefully in few tick
-        // end
+        else if (posiX == 15 && posiY == 10 || posiX == 12 && posiY == 54 || posiX == 27 && posiY == 33 ||
+            posiX == 70 && posiY == 20 || posiX == 57 && posiY == 57) begin
+            rgb_reg = 6;
+        end
         else begin
-            rgb = 0;
+            rgb_reg = 0;
             // encounter = 0;
         end
-        
+            
+        // player logic
+        if (posiX == posX && posiY == posY) begin
+            // enemy detection
+            if (posiX == 15 && posiY == 10 || posiX == 12 && posiY == 54 || posiX == 27 && posiY == 33 ||
+            posiX == 70 && posiY == 20 || posiX == 57 && posiY == 57)
+                encounter = 1;
+
+            // roll back logic
+            if (rgb_reg != 0) begin
+                posX = oldPosX;
+                posY = oldPosY;
+            end
+            else begin
+                rgb_reg = 1;
+                oldPosX = posX;
+                oldPosY = posY;
+            end
+            
+        end
+        else 
+            encounter = 0;
+
+        rgb = rgb_reg;
         // render player and check collision
-        // if (posiX == posX && posiY == posY) begin
-        //     if (rgb != 0)
-        //         posX = oldPosX;
-        //         posY = oldPosY;
-        //     end
-        //     else begin
-        //         rgb = 1;
-        //         oldPosX = posX;
-        //         oldPosY = posY;
-        //     end
         pTransmit = transmit;
     end
 
