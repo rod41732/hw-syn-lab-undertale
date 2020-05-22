@@ -71,7 +71,6 @@ module vga_controller(
     reg [9:0] i = 0, j = 0, ni, nj; // row, col
 	
     // game data
-    reg [9:0] cx = 10'd320, cy = 10'd240;
     reg isHit = 0;
     reg [5:0] hitCD = 0;
     reg [7:0] hp = 100, maxHp = 100, enemyHp = 1, maxEnemyHp = 100; // HPs
@@ -122,20 +121,7 @@ module vga_controller(
             ni = i;
             nj = j + 1;
         end
-        // -- use in clk instead
-        // if (!pGameClk && gameClk) begin
-            // if (gameState == 0) begin
-            //     if (tickCount == 300) begin
-            //         nextGameState = 1;
-            //         nextTickCount = 0;
-            //     end
-            //     else 
-            //         nextTickCount = tickCount + 1;
-            // end 
-        // end
-        // if (!pTransmit && transmit) begin
-        //     nextGameState = 0;
-        // end
+        
     end
 
     // state assignment
@@ -145,9 +131,6 @@ module vga_controller(
         j <= nj;
         we <= nextWe;
         writeAddr <= nextWriteAddr;
-
-        // tickCount <= nextTickCount;
-        // gameState <= nextGameState;
 
         if (state == 0) begin
             dataInReg <= 0;
@@ -180,10 +163,7 @@ module vga_controller(
             end
             else if(gameState == 1) begin // attack
 
-                if (|playerRGB) dataInReg <= playerRGB;
-                // else if (|enemy1RGB) dataInReg <= enemy1RGB;
-                // else if (|enemy2RGB) dataInReg <= enemy2RGB;
-                else if (|borderRGB) dataInReg <= borderRGB;
+                if (|borderRGB) dataInReg <= borderRGB;
                 else if (|hpbarRGB) dataInReg <= hpbarRGB;
                 else if (|attackIndRGB) dataInReg <= attackIndRGB;
                 else dataInReg <= 0; // some how ?
@@ -220,21 +200,13 @@ module vga_controller(
                 else 
                     tickCount <= tickCount + 1;
             end
-            // else if (gameState == 2) begin 
-            //     if (tickCount == 400) begin
-            //         gameState <= 0; // dodge phase
-            //         tickCount <= 0;
-            //     end
-            //     else 
-            //         tickCount <= tickCount + 1;
-            // end
         end
         // cheat logic
 
 
 
 
-        // attack logic
+        // key press logic
         if (!pTransmit && transmit) begin
             if (tx_buf == 8'h20)
                 if (gameState == 1) begin
@@ -258,25 +230,12 @@ module vga_controller(
         pTransmit <= transmit;
     end
 
-    // keyboard logic stuff
-    wire gameTransmit = (transmit && gameState == 0);
-	always @(negedge gameTransmit) begin
-		if (tx_buf == 8'h57) cy = cy - 10; // w 
-		else if (tx_buf == 8'h53) cy = cy + 10; // s
-		else if (tx_buf ==  8'h41) cx = cx - 10; // a
-		else if (tx_buf ==  8'h44) cx = cx + 10; // d
-
-        if (cx <= 240) cx = 240;
-        if (cx >= 400) cx = 400;
-        if (cy <= 240) cx = 240;
-        if (cy >= 420) cx = 420;
-	end
-
-
     // ============================== model section
     player #(.BUS_WIDTH(BUS_WIDTH)) playerModel(
-        cx,
-        cy,
+        clk,
+        transmit,
+        tx_buf,
+        gameState,
         j,
         i,
         playerRGB
@@ -325,7 +284,6 @@ module vga_controller(
         mapRGB,
         encounter
     );
-
 
     hpbar hpbar1(j, i, hp, maxHp, enemyHp, maxEnemyHp, hpbarRGB);
 
