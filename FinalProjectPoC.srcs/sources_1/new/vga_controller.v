@@ -74,10 +74,10 @@ module vga_controller(
     // game data
     reg isHit = 0;
     reg [5:0] hitCD = 0;
-    reg [7:0] hp = 100, maxHp = 100, enemyHp = 1, maxEnemyHp = 100; // HPs
+    reg [7:0] hp = 50, maxHp = 50, enemyHp = 100, maxEnemyHp = 100; // HPs
     wire [7:0] attackDamage; 
 
-    reg [3:0] gameState = 7; //
+    reg [3:0] gameState = 7;
     reg [15:0] tickCount = 0; // for countdown purpose or something
     reg hasPlayed = 0;
     // ========= wirings
@@ -234,7 +234,7 @@ module vga_controller(
                 end
                 else if (gameState == 7) begin
                     hasPlayed <= 1;
-                    gameState <= 0;
+                    gameState <= 1;
                 end
             else if (tx_buf == 8'h58) // X
                 enemyHp <= 0; 
