@@ -54,10 +54,16 @@ module attack_ind(
     reg right = 0;
 
     always @(posedge gameClk) begin
-        if (markerPos == LEFT) right = 1;
-        else if (markerPos == RIGHT) right = 0;
+        if (markerPos <= LEFT) begin
+            right = 1;
+            markerPos = LEFT;
+        end
+        else if (markerPos >= RIGHT) begin 
+            right = 0;
+            markerPos = RIGHT;
+        end
 
-        markerPos = right ? markerPos + 1 : markerPos - 1;
+        markerPos = right ? markerPos + 3 : markerPos - 3;
     end
 
 
@@ -67,12 +73,14 @@ module attack_ind(
         ) rgb_reg <= 5'd3;
         else 
             if (TOP-THICCNESS <= y && y <= TOP+THICCNESS)
-                if ((middle > x ? middle - x : x - middle) <= 30)
-                    rgb_reg <= 5'd4;
+                if ((middle > x ? middle - x : x - middle) <= 10)
+                    rgb_reg <= 5'd8;
+                else if ((middle > x ? middle - x : x - middle) <= 30)
+                    rgb_reg <= 5'd9;
                 else if ((middle > x ? middle - x : x - middle) <= 45)
-                    rgb_reg <= 5'd1;
-                else if ((middle > x ? middle - x : x - middle) <= 65)
-                    rgb_reg <= 5'd6;
+                    rgb_reg <= 5'd10;
+                else if ((middle > x ? middle - x : x - middle) <= 77) // (400-240)/2 - thiccness
+                    rgb_reg <= 5'd11;
                 else 
                     rgb_reg <= 5'd0;
             else
@@ -82,7 +90,7 @@ module attack_ind(
             damage_reg <= 8'd40;
         else if ((middle > markerPos ? middle - markerPos : markerPos - middle) <= 30)
             damage_reg <= 8'd30;
-        else if ((middle > markerPos ? middle - markerPos : markerPos - middle) <= 65)
+        else if ((middle > markerPos ? middle - markerPos : markerPos - middle) <= 45)
             damage_reg <= 8'd15;
         else damage_reg <= 0;
     end

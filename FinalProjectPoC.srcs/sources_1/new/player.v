@@ -31,7 +31,7 @@ module player(
     rgb
     );
     
-    parameter size = 10; // circle size
+    parameter size = 16; // circle size
     parameter BUS_WIDTH = 12; // set equal to size of color
     
     input wire clk;
@@ -55,9 +55,9 @@ module player(
 
         // move player only in dodge mode
         if (!pTransmit && transmit && gameState == 0)
-            if (tx_buf == 8'h57) cy <= cy >= 10 ? cy - 10 : 0; // w 
+            if (tx_buf == 8'h57) cy <= cy >= 250 ? cy - 10 : 240; // w 
             else if (tx_buf == 8'h53) cy <= cy <= 410 ? cy + 10 : 420 ; // s
-            else if (tx_buf ==  8'h41) cx <= cx >= 10 ? cx - 10 : 0; // a
+            else if (tx_buf ==  8'h41) cx <= cx >= 250 ? cx - 10 : 240; // a
             else if (tx_buf ==  8'h44) cx <= cx <= 390 ? cx + 10 : 400; // d
 
         pGameState = gameState;
@@ -70,6 +70,6 @@ module player(
     wire [19:0] dist;
 
     assign dist = {10'b0, (cx>px ? cx-px: px-cx)}**2 + {10'b0, (cy>py ? cy-py: py-cy)}**2;
-    assign rgb = dist <= 20'd100 ? 5'd1: 5'd0; 
+    assign rgb = dist <= size ? 5'd1: 5'd0; 
     
 endmodule

@@ -41,7 +41,6 @@ module vga_timer
     wire [9:0] y;
 
 	// video status output from vga_sync to tell when to route out rgb signal to DAC
-	wire video_on;
     reg [19:0] dist;
        
         

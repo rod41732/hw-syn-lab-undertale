@@ -22,25 +22,28 @@
 
 module rng(
         clk,
+        salt,
         number
     );
     
    input wire clk;
-   output reg [31:0] number;
+   input wire [15:0] salt;
+   output reg [15:0] number;
     
     parameter seed = 10;
     
-    parameter a = 2390234;
-    parameter b = 124960;
-    parameter c = 870411;
-    parameter d = 7239492;
-    parameter e = 6041234;
+    parameter a = 16'd30234;
+    parameter b = 16'd4960;
+    parameter c = 16'd30411;
+    parameter d = 16'd19492;
+    parameter e = 16'd21234;
     
     initial begin
         number = seed;
     end
     
     always @(posedge clk) begin
-        number = ((a*number - b)^d)%c + (e*number + a)%d;
+        // just random messy formula
+        number = (((a-salt)*(number+salt) - b*salt)^d)%c + (e*number*salt + a - salt)%d;
     end
 endmodule

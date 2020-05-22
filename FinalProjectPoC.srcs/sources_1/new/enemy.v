@@ -24,6 +24,7 @@ module enemy(
         clk,
         gameClk,
         gameState,
+        salt,
         hitEnemy,
         px,
         py,
@@ -39,25 +40,28 @@ module enemy(
     parameter initY = minY;
 
     parameter COLOR_WIDTH = 12;
-    parameter SIZE_SQ = 100;
+    parameter SIZE_SQ = 25;
 
-    reg [9:0] x, y;
     // reg [9:0] x = minX, y = minY;
+    input wire clk;
     input wire gameClk;
+    input wire [3:0] gameState;
+    input wire [15:0] salt;
+    input wire hitEnemy;
     input wire [9:0] px, py;
     reg [2:0] vx, vy; // control axis
     output wire [COLOR_WIDTH-1:0] rgb; 
 
-
-    wire [31:0] number;
+    reg [9:0] x, y;
+    wire [15:0] numberX, numberY, numberVX, numberVY;
 
     // seed for randomize
     parameter seed = 255;
 
-    rng #(.seed(seed + 132178)) rngX(gameClk, numberX);
-    rng #(.seed(seed + 459801)) rngY(gameClk, numberY);
-    rng #(.seed(seed + 513890)) rngVX(gameClk, numberVX);
-    rng #(.seed(seed + 601942)) rngVY(gameClk, numberVY);
+    rng #(.seed(seed + 2178)) rngX(gameClk, salt, numberX);
+    rng #(.seed(seed + 9801)) rngY(gameClk, salt, numberY);
+    rng #(.seed(seed + 3890)) rngVX(gameClk, salt, numberVX);
+    rng #(.seed(seed + 1942)) rngVY(gameClk, salt, numberVY);
 
     reg right = 1, down = 1;
     reg hasHit = 0; // if hit don't show
@@ -66,7 +70,7 @@ module enemy(
 
     always @(posedge clk) begin
 
-        if (!pGameClk && gameClk)
+        if (!pGameClk && gameClk) begin
             if (x == minX) right = 1;
             else if (x == maxX) right = 0;
 
@@ -80,6 +84,7 @@ module enemy(
             if (x > maxX) x = maxX;
             if (y < minY) y = minY;
             if (y > maxY) y = maxY;
+        end
 
         if (!pHit && hitEnemy)
             hasHit = 1;
@@ -90,13 +95,17 @@ module enemy(
             x = minX + numberX%(maxX-minX+1);
             y = minY + numberY%(maxY-minY+1);
             vx = numberVX%4;
-            vy = numberVY%4;
+            // vy = numberVY%4;
+            if (vx == 0 && vy == 0) begin
+                vx = 1;
+                vy = 1;
+            end
             
             // resetHit
             hasHit = 0;
         end
 
-        gameClk = pGameClk;
+        pGameClk = gameClk;
         pHit = hitEnemy;
         pState = gameState;
     end 

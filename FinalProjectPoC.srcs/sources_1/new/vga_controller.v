@@ -39,7 +39,7 @@ module vga_controller(
     parameter HEIGHT = 480;
     parameter BUS_WIDTH = 12; // set equal to size of color
 
-    localparam NUM_OF_ENEMY = 4;
+    localparam NUM_OF_ENEMY = 5;
 
 
     // declaration
@@ -59,7 +59,7 @@ module vga_controller(
 
     // local state
     reg [1:0] state = 0, nextState; // 0=CLEAR, 1=DRAW_PLAYER, 2=IDLE (wait for next tick)
-    reg nextWe;
+    reg nextWe; 
     reg [18:0] nextWriteAddr;
 
     // polling
@@ -77,17 +77,17 @@ module vga_controller(
     reg [7:0] hp = 100, maxHp = 100, enemyHp = 1, maxEnemyHp = 100; // HPs
     wire [7:0] attackDamage; 
 
-    reg [3:0] gameState = 7, nextGameState = 0; //
-    reg [15:0] tickCount = 0, nextTickCount = 0; // for countdown purpose or something
-
+    reg [3:0] gameState = 7; //
+    reg [15:0] tickCount = 0; // for countdown purpose or something
+    reg hasPlayed = 0;
     // ========= wirings
     // RGB data from module
-    wire [BUS_WIDTH-1:0] playerRGB, borderRGB, hpbarRGB, attackIndRGB, mapRGB;
+    wire [BUS_WIDTH-1:0] playerRGB, borderRGB, hpbarRGB, attackIndRGB, mapRGB, gameoverRGB;
     
     wire [BUS_WIDTH-1:0] enemyRGB[NUM_OF_ENEMY-1:0], mergeRGB[NUM_OF_ENEMY-1:0];
     reg [NUM_OF_ENEMY-1:0] hitEnemy;
 
-    assign mergeRGB[0] = 0;
+    assign mergeRGB[0] = enemyRGB[0];
     genvar x;
     generate
         for (x = 1; x < NUM_OF_ENEMY; x = x+1) begin
@@ -118,7 +118,7 @@ module vga_controller(
             nextState = onGameClk ? 0 : 2;
 
         nextWriteAddr = (state == 2'b00 || state == 2'b01) ? 11'd640*{9'b0, i} + j : 0;
-        nextWe = gameState != 7 && (state == 2'b00 || state == 2'b01);
+        nextWe = (gameState != 7) && (state == 0 || state == 1);
 
         // render scan state
         if (state == 1) // advance when idle only
@@ -142,15 +142,18 @@ module vga_controller(
     // hit detection
         generate
             for (x=0; x<NUM_OF_ENEMY; x = x+1) begin
-                always @(posedge clk) begin
+                always @(*) begin
                     if (|playerRGB && |enemyRGB[x]) begin
                         hitEnemy[x] = 1;
-                        hp = hp - 5;
+                        // hp <= hp - 5;
                     end
                     else hitEnemy[x] = 0;
                 end
             end
         endgenerate
+
+    wire [2:0] hitCount;
+    count_one #(.IN_BITS(5)) countHit(hitEnemy, hitCount);
 
     // state assignment
     always @(posedge clk) begin
@@ -185,17 +188,19 @@ module vga_controller(
                 else if (|attackIndRGB) dataInReg <= attackIndRGB;
                 else dataInReg <= 0; // some how ?
                 // else dataInReg <= 0;
-                
-                // else 
             end
-            else if (gameState == 7) begin // menu
-                dataInReg <= (i/4+j/4)%2 == 0 ? 5'd1 : 5'd2;
+            else if (gameState == 7 && hasPlayed) begin // death menu
+                if (|gameoverRGB) dataInReg <= gameoverRGB;
+                else dataInReg <= 0;
             end
             else if (gameState == 2) begin // map
                 if (|mapRGB) dataInReg <= mapRGB;
                 else dataInReg <= 0;
             end
         end
+
+
+        hp <= hp >= hitCount * 5 ? hp - hitCount*5 : 0;
 
         // game state
         if (gameClk && !pGameClk) begin
@@ -228,6 +233,7 @@ module vga_controller(
                     tickCount <= 0;
                 end
                 else if (gameState == 7) begin
+                    hasPlayed <= 1;
                     gameState <= 0;
                 end
             else if (tx_buf == 8'h58) // X
@@ -255,11 +261,20 @@ module vga_controller(
     );
 
     // enemy #(.COLOR_WIDTH(BUS_WIDTH)) enemy1(
-    localparam [31:0] seeds[3:0] = {32'd902341, 32'd427809, 32'd367912, 32'd128903};
+    reg [15:0] salts[3:0];
+    initial begin
+        salts[0] = 1353;
+        salts[1] = 5012;
+        salts[2] = 4272;
+        salts[3] = 7622;
+        salts[4] = 3222;
+    end
+    
+    
 
     generate
         for (x = 0; x < NUM_OF_ENEMY; x = x+1) begin
-            enemy #(.COLOR_WIDTH(BUS_WIDTH), .seed(seeds[x])) enemyX(clk, gameClk, gameState, hitEnemy[x], j, i, enemyRGB[x]);
+            enemy #(.COLOR_WIDTH(BUS_WIDTH), .seed(3441)) enemyX(clk, gameClk, gameState, salts[x], hitEnemy[x], j, i, enemyRGB[x]);
         end
     endgenerate
     
@@ -290,6 +305,7 @@ module vga_controller(
 
     hpbar hpbar1(j, i, hp, maxHp, enemyHp, maxEnemyHp, hpbarRGB);
 
+    gameover #(.BUS_WIDTH(BUS_WIDTH)) gameoverDialog(j, i, gameoverRGB);
     // ================================= end model section 
 
     assign dataIn = dataInReg;
