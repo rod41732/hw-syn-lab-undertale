@@ -21,9 +21,10 @@
 
 
 module enemy(
+        clk,
         gameClk,
-        vx,
-        vy,
+        gameState,
+        hitEnemy,
         px,
         py,
         rgb
@@ -40,31 +41,68 @@ module enemy(
     parameter COLOR_WIDTH = 12;
     parameter SIZE_SQ = 100;
 
-    reg [9:0] x = initX, y = initY;
+    reg [9:0] x, y;
     // reg [9:0] x = minX, y = minY;
     input wire gameClk;
     input wire [9:0] px, py;
-    input wire vx, vy; // control axis
+    reg [2:0] vx, vy; // control axis
     output wire [COLOR_WIDTH-1:0] rgb; 
 
 
+    wire [31:0] number;
+
+    // seed for randomize
+    parameter seed = 255;
+
+    rng #(.seed(seed + 132178)) rngX(gameClk, numberX);
+    rng #(.seed(seed + 459801)) rngY(gameClk, numberY);
+    rng #(.seed(seed + 513890)) rngVX(gameClk, numberVX);
+    rng #(.seed(seed + 601942)) rngVY(gameClk, numberVY);
+
     reg right = 1, down = 1;
+    reg hasHit = 0; // if hit don't show
+    reg pGameClk, pHit, pState;
 
-    always @(posedge gameClk) begin
-        if (x == minX) right = 1;
-        else if (x == maxX) right = 0;
 
-        if (y == minY) down = 1;
-        else if (y == maxY) down = 0;
+    always @(posedge clk) begin
 
-        if (vx)
-            x = right ? x+1 : x-1;
-        if (vy)
-            y = down ? y+1 : y-1;
+        if (!pGameClk && gameClk)
+            if (x == minX) right = 1;
+            else if (x == maxX) right = 0;
+
+            if (y == minY) down = 1;
+            else if (y == maxY) down = 0;
+
+            x = right ? x+vx : x-vx;
+            y = down ? y+vy : y-vy;
+            
+            if (x < minX) x = minX;
+            if (x > maxX) x = maxX;
+            if (y < minY) y = minY;
+            if (y > maxY) y = maxY;
+
+        if (!pHit && hitEnemy)
+            hasHit = 1;
+        
+        // do something when enter that state
+        if (pState != 0 && gameState == 0) begin
+            // re-random position and speed;
+            x = minX + numberX%(maxX-minX+1);
+            y = minY + numberY%(maxY-minY+1);
+            vx = numberVX%4;
+            vy = numberVY%4;
+            
+            // resetHit
+            hasHit = 0;
+        end
+
+        gameClk = pGameClk;
+        pHit = hitEnemy;
+        pState = gameState;
     end 
 
     wire [19:0] dist;
     assign dist = {10'b0, px>x ? px-x : x-px}**2 + {10'b0, py>y ? py-y : y-py}**2;
-    assign rgb = dist <= SIZE_SQ ? 5'h2 : 5'd0; // red
+    assign rgb = (!hasHit && dist <= SIZE_SQ) ? 5'h2 : 5'd0; // red
 
 endmodule

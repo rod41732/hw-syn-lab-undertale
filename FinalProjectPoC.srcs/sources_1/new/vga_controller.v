@@ -39,7 +39,8 @@ module vga_controller(
     parameter HEIGHT = 480;
     parameter BUS_WIDTH = 12; // set equal to size of color
 
-    localparam NUM_OF_ENTITY = 2;
+    localparam NUM_OF_ENEMY = 4;
+
 
     // declaration
     // clocks
@@ -81,11 +82,23 @@ module vga_controller(
 
     // ========= wirings
     // RGB data from module
-    wire [BUS_WIDTH-1:0] playerRGB, enemy1RGB, enemy2RGB, borderRGB, hpbarRGB, attackIndRGB, mapRGB;
+    wire [BUS_WIDTH-1:0] playerRGB, borderRGB, hpbarRGB, attackIndRGB, mapRGB;
     
+    wire [BUS_WIDTH-1:0] enemyRGB[NUM_OF_ENEMY-1:0], mergeRGB[NUM_OF_ENEMY-1:0];
+    reg [NUM_OF_ENEMY-1:0] hitEnemy;
+
+    assign mergeRGB[0] = 0;
+    genvar x;
+    generate
+        for (x = 1; x < NUM_OF_ENEMY; x = x+1) begin
+            assign mergeRGB[x] = |mergeRGB[x-1] ? mergeRGB[x-1] : enemyRGB[x];
+        end
+    endgenerate
+
     // buffer    
     reg [BUS_WIDTH-1:0] dataInReg;
     
+    // debug stuff
     always @(posedge clk)
         if (gameState == 0 || gameState == 2)
             debugOutput = tickCount;
@@ -124,6 +137,21 @@ module vga_controller(
         
     end
 
+
+    
+    // hit detection
+        generate
+            for (x=0; x<NUM_OF_ENEMY; x = x+1) begin
+                always @(posedge clk) begin
+                    if (|playerRGB && |enemyRGB[x]) begin
+                        hitEnemy[x] = 1;
+                        hp = hp - 5;
+                    end
+                    else hitEnemy[x] = 0;
+                end
+            end
+        endgenerate
+
     // state assignment
     always @(posedge clk) begin
         state <= nextState;
@@ -134,32 +162,21 @@ module vga_controller(
 
         if (state == 0) begin
             dataInReg <= 0;
-            isHit <= 0;
+            // isHit <= 0;
             i <= 0;
             j <= 0;
-            hp <= isHit ? (hp <= 3 ? 0 : hp - 3) : hp;
-            hitCD = hitCD == 0 ? 0 : hitCD - 1;
+            // hp <= isHit ? (hp <= 3 ? 0 : hp - 3) : hp;
+            // hitCD = hitCD == 0 ? 0 : hitCD - 1;
         end
         else if (state == 1) begin
 
             if (gameState == 0) begin // dodge
-
-
                 if (|playerRGB) dataInReg <= playerRGB;
-                else if (|enemy1RGB) dataInReg <= enemy1RGB;
-                else if (|enemy2RGB) dataInReg <= enemy2RGB;
+                else if (|mergeRGB[NUM_OF_ENEMY-1]) dataInReg <= mergeRGB[NUM_OF_ENEMY-1];
                 else if (|borderRGB) dataInReg <= borderRGB;
                 else if (|hpbarRGB) dataInReg <= hpbarRGB;
                 // else if (|attackIndRGB) dataInReg <= attackIndRGB;
                 else dataInReg <= 0;
-                
-                if (|playerRGB && (|enemy1RGB || |enemy2RGB) && ~isHit && ~|hitCD) begin
-                    isHit <= 1;
-                    hitCD <= 6'd60;
-                end
-
-
-
             end
             else if(gameState == 1) begin // attack
 
@@ -201,10 +218,6 @@ module vga_controller(
                     tickCount <= tickCount + 1;
             end
         end
-        // cheat logic
-
-
-
 
         // key press logic
         if (!pTransmit && transmit) begin
@@ -242,24 +255,14 @@ module vga_controller(
     );
 
     // enemy #(.COLOR_WIDTH(BUS_WIDTH)) enemy1(
-    enemy #(.COLOR_WIDTH(BUS_WIDTH), .initY(320)) enemy1(
-        gameClk,
-        1,
-        0,
-        j,
-        i,
-        enemy1RGB
-    );
+    localparam [31:0] seeds[3:0] = {32'd902341, 32'd427809, 32'd367912, 32'd128903};
 
-    enemy #(.COLOR_WIDTH(BUS_WIDTH), .initX(320)) enemy2(
-        gameClk,
-        0,
-        1,
-        j,
-        i,
-        enemy2RGB
-    );
-
+    generate
+        for (x = 0; x < NUM_OF_ENEMY; x = x+1) begin
+            enemy #(.COLOR_WIDTH(BUS_WIDTH), .seed(seeds[x])) enemyX(clk, gameClk, gameState, hitEnemy[x], j, i, enemyRGB[x]);
+        end
+    endgenerate
+    
     border #(.BUS_WIDTH(BUS_WIDTH)) gameBorder(
         j, i, borderRGB
     );
