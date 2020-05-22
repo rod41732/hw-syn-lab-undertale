@@ -95,7 +95,8 @@ module enemy(
             x = minX + numberX%(maxX-minX+1);
             y = minY + numberY%(maxY-minY+1);
             vx = numberVX%4;
-            // vy = numberVY%4;
+            vy = numberVY%4;
+            
             if (vx == 0 && vy == 0) begin
                 vx = 1;
                 vy = 1;

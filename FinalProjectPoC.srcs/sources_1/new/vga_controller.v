@@ -40,6 +40,8 @@ module vga_controller(
     parameter BUS_WIDTH = 12; // set equal to size of color
 
     localparam NUM_OF_ENEMY = 5;
+    localparam MAX_HP = 100;
+    localparam ENEMY_MAX_HP = 100;
 
 
     // declaration
@@ -74,7 +76,7 @@ module vga_controller(
     // game data
     reg isHit = 0;
     reg [5:0] hitCD = 0;
-    reg [7:0] hp = 50, maxHp = 50, enemyHp = 100, maxEnemyHp = 100; // HPs
+    reg [7:0] hp = MAX_HP, maxHp = MAX_HP, enemyHp = ENEMY_MAX_HP, maxEnemyHp = ENEMY_MAX_HP; // HPs
     wire [7:0] attackDamage; 
 
     reg [3:0] gameState = 7;
@@ -140,17 +142,17 @@ module vga_controller(
 
     
     // hit detection
-        generate
-            for (x=0; x<NUM_OF_ENEMY; x = x+1) begin
-                always @(*) begin
-                    if (|playerRGB && |enemyRGB[x]) begin
-                        hitEnemy[x] = 1;
-                        // hp <= hp - 5;
-                    end
-                    else hitEnemy[x] = 0;
+    generate
+        for (x=0; x<NUM_OF_ENEMY; x = x+1) begin
+            always @(*) begin
+                if (gameState == 0 && |playerRGB && |enemyRGB[x]) begin
+                    hitEnemy[x] = 1;
+                    // hp <= hp - 5;
                 end
+                else hitEnemy[x] = 0;
             end
-        endgenerate
+        end
+    endgenerate
 
     wire [2:0] hitCount;
     count_one #(.IN_BITS(5)) countHit(hitEnemy, hitCount);
@@ -206,12 +208,12 @@ module vga_controller(
         if (gameClk && !pGameClk) begin
             if (enemyHp == 0 ) begin // enemy dead --> go to map
                 // reset game and go to map
-                enemyHp <= 100;
+                enemyHp <= ENEMY_MAX_HP;
                 gameState <= 2;
             end
             else if (hp == 0) begin // dead --> go to main
-                hp <= 100;
-                enemyHp <= 100;
+                hp <= MAX_HP;
+                enemyHp <= ENEMY_MAX_HP;
                 gameState <= 7;
             end
             else if (gameState == 0) begin
@@ -234,7 +236,7 @@ module vga_controller(
                 end
                 else if (gameState == 7) begin
                     hasPlayed <= 1;
-                    gameState <= 1;
+                    gameState <= 2;
                 end
             else if (tx_buf == 8'h58) // X
                 enemyHp <= 0; 
@@ -269,12 +271,11 @@ module vga_controller(
         salts[3] = 7622;
         salts[4] = 3222;
     end
-    
-    
 
     generate
         for (x = 0; x < NUM_OF_ENEMY; x = x+1) begin
-            enemy #(.COLOR_WIDTH(BUS_WIDTH), .seed(3441)) enemyX(clk, gameClk, gameState, salts[x], hitEnemy[x], j, i, enemyRGB[x]);
+            // disable clk when gameState isn't 0
+            enemy #(.COLOR_WIDTH(BUS_WIDTH), .seed(3441)) enemyX(clk && gameState == 0, gameClk, gameState, salts[x], hitEnemy[x], j, i, enemyRGB[x]);
         end
     endgenerate
     
