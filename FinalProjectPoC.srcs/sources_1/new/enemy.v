@@ -40,7 +40,7 @@ module enemy(
     parameter initY = minY;
 
     parameter COLOR_WIDTH = 12;
-    parameter SIZE_SQ = 25;
+    parameter SIZE_SQ = 64;
 
     // reg [9:0] x = minX, y = minY;
     input wire clk;

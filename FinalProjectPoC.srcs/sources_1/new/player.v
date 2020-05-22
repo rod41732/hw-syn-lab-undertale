@@ -31,7 +31,7 @@ module player(
     rgb
     );
     
-    parameter size = 16; // circle size
+    parameter size = 64; // circle size
     parameter BUS_WIDTH = 12; // set equal to size of color
     
     input wire clk;
