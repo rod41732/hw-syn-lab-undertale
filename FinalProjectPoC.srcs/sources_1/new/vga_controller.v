@@ -275,7 +275,7 @@ module vga_controller(
     generate
         for (x = 0; x < NUM_OF_ENEMY; x = x+1) begin
             // disable clk when gameState isn't 0
-            enemy #(.COLOR_WIDTH(BUS_WIDTH), .seed(3441)) enemyX(clk && gameState == 0, gameClk, gameState, salts[x], hitEnemy[x], j, i, enemyRGB[x]);
+            enemy #(.COLOR_WIDTH(BUS_WIDTH), .seed(3441)) enemyX(clk, gameClk, gameState, salts[x], hitEnemy[x], j, i, enemyRGB[x]);
         end
     endgenerate
     
