@@ -29,3 +29,8 @@ list features for criteria
 
 - WASD to move
 - space to attack / go through menu
+
+## special thanks
+- code for converting BMP to memory file, modified from this  https://www.ece.ucdavis.edu/~bbaas/180/tutorials/image.bitmaps/img2v.py
+- code for VGA display is modified from last LAB-6, which is taken from here https://embeddedthoughts.com/2016/07/29/driving-a-vga-monitor-using-an-fpga/
+
