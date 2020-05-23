@@ -52,7 +52,7 @@ module player(
 
 
     localparam GRAVITY = 10'd2;
-    localparam JUMP_STRENGTH = 10'd20;
+    localparam JUMP_STRENGTH = 10'd40;
     reg [9:0] vy = 128; //  
 
     // heartMode; // 0 = red, 1 = blue 
@@ -77,7 +77,7 @@ module player(
                 if (gameMode == 0)
                     cy <= cy >= 10'd250 ? cy - 10'd10 : 10'd240; // w 
                 else if (cy == 10'd420) // bottom 
-                    vy <= JUMP_STRENGTH + 128;
+                    vy <= 128 - JUMP_STRENGTH;
             end
             // else if (tx_buf == 8'h53) cy <= cy <= 410 ? cy + 10 : 420 ; // s
             else if (tx_buf == 8'h53) begin //s
