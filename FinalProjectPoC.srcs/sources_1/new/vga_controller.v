@@ -39,7 +39,7 @@ module vga_controller(
     parameter HEIGHT = 480;
     parameter BUS_WIDTH = 12; // set equal to size of color
 
-    localparam NUM_OF_ENEMY = 5;
+    localparam NUM_OF_ENEMY = 4;
     localparam MAX_HP = 100;
     localparam ENEMY_MAX_HP = 100;
 
@@ -254,6 +254,7 @@ module vga_controller(
     // ============================== model section
     player #(.BUS_WIDTH(BUS_WIDTH)) playerModel(
         clk,
+        gameClk,
         transmit,
         tx_buf,
         gameState,
@@ -263,7 +264,7 @@ module vga_controller(
     );
 
     // enemy #(.COLOR_WIDTH(BUS_WIDTH)) enemy1(
-    reg [15:0] salts[3:0];
+    reg [15:0] salts[4:0];
     initial begin
         salts[0] = 1353;
         salts[1] = 5012;

@@ -30,13 +30,13 @@ module rng(
    input wire [15:0] salt;
    output reg [15:0] number;
     
-    parameter seed = 10;
+    parameter [16:0] seed = 10;
     
-    parameter a = 16'd30234;
-    parameter b = 16'd4960;
-    parameter c = 16'd30411;
-    parameter d = 16'd19492;
-    parameter e = 16'd21234;
+    parameter [16:0] a = 16'd30234;
+    parameter [16:0] b = 16'd4960;
+    parameter [16:0] c = 16'd30411;
+    parameter [16:0] d = 16'd19492;
+    parameter [16:0] e = 16'd21234;
     
     initial begin
         number = seed;
