@@ -21,8 +21,9 @@ list features for criteria
 - damage of attack depend on position when press attack.
 - has map to walk before battle (160x120 tile)
     - map scroll when walk off-screen.
-- can encounter enemy when walking in map.
+- can encounter enemy when walking in map. it's orange dot in map
 - more than 1 pattern of movement of bullet.
+- multiple mode (blue & red SOUL) obstacle is still same tho :(
 
 ## how to play
 
